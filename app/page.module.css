@@ -1,0 +1,56 @@
+.main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #000;
+  color: #0f0;
+  font-family: 'Press Start 2P', cursive;
+  padding: 20px;
+}
+
+.gameContainer {
+  width: 80%;
+  max-width: 800px;
+  padding: 20px;
+  border: 2px solid #0f0;
+  box-shadow: 0 0 10px #0f0;
+  margin-bottom: 20px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.choices {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.choices button {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #000;
+  color: #0f0;
+  border: 1px solid #0f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.choices button:hover {
+  background-color: #0f0;
+  color: #000;
+}
+
+.statusBar {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  padding: 10px;
+  background-color: #001100;
+  border-top: 2px solid #0f0;
+}
+
+.statusBar div {
+  font-size: 0.8em;
+}
