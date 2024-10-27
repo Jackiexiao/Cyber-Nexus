@@ -121,6 +121,30 @@ interface GameState {
   reputation: number;
 }
 
+interface Item {
+  id: string;
+  name: string;
+  description: string;
+}
+
+const items: Record<string, Item> = {
+  dataChip: {
+    id: 'dataChip',
+    name: '数据芯片',
+    description: '一个包含重要信息的高科技芯片。'
+  },
+  hackTool: {
+    id: 'hackTool',
+    name: '黑客工具',
+    description: '一套先进的黑客工具，可以提高你的入侵成功率。'
+  },
+  medKit: {
+    id: 'medKit',
+    name: '医疗包',
+    description: '可以恢复你的健康。'
+  }
+}
+
 export default function Home() {
   const [currentScene, setCurrentScene] = useState<Scene>(scenes.start)
   const [isTypingComplete, setIsTypingComplete] = useState(false)
@@ -130,6 +154,7 @@ export default function Home() {
     money: 1000,
     reputation: 50,
   })
+  const [inventory, setInventory] = useState<Item[]>([])
 
   useEffect(() => {
     setIsTypingComplete(false)
@@ -140,9 +165,42 @@ export default function Home() {
     setIsTransitioning(true)
     setTimeout(() => {
       setCurrentScene(scenes[nextScene])
-      // 这里可以根据选择更新游戏状态
-      // 例如：setGameState(prevState => ({ ...prevState, health: prevState.health - 10 }))
-    }, 500) // 等待500ms后切换场景，给动画足够的时间
+      updateGameState(nextScene)
+      checkForRandomEvent()
+    }, 500)
+  }
+
+  const updateGameState = (nextScene: string) => {
+    // 根据选择更新游戏状态
+    switch (nextScene) {
+      case 'frontalAssault':
+        setGameState(prev => ({ ...prev, health: prev.health - 20, reputation: prev.reputation + 10 }))
+        break
+      case 'sneakIn':
+        setGameState(prev => ({ ...prev, money: prev.money + 500 }))
+        break
+      case 'downloadData':
+        addItemToInventory(items.dataChip)
+        break
+      // 添加更多场景的状态更新...
+    }
+  }
+
+  const addItemToInventory = (item: Item) => {
+    setInventory(prev => [...prev, item])
+  }
+
+  const checkForRandomEvent = () => {
+    if (Math.random() < 0.2) { // 20% 触发随机事件的概率
+      const randomEvents = [
+        { text: "你发现了一个隐藏的数据终端！", effect: () => setGameState(prev => ({ ...prev, money: prev.money + 200 })) },
+        { text: "一个神秘的AI向你发送了一条加密消息...", effect: () => setGameState(prev => ({ ...prev, reputation: prev.reputation + 5 })) },
+        { text: "你触发了一个隐藏的安全系统！", effect: () => setGameState(prev => ({ ...prev, health: prev.health - 10 })) },
+      ]
+      const event = randomEvents[Math.floor(Math.random() * randomEvents.length)]
+      alert(event.text)
+      event.effect()
+    }
   }
 
   return (
@@ -190,6 +248,14 @@ export default function Home() {
         <div>健康: {gameState.health}</div>
         <div>金钱: {gameState.money}</div>
         <div>声望: {gameState.reputation}</div>
+      </div>
+      <div className={styles.inventory}>
+        <h3>物品栏</h3>
+        {inventory.map((item, index) => (
+          <div key={index} className={styles.inventoryItem}>
+            {item.name} - {item.description}
+          </div>
+        ))}
       </div>
     </main>
   )

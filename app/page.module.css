@@ -54,3 +54,23 @@
 .statusBar div {
   font-size: 0.8em;
 }
+
+.inventory {
+  width: 80%;
+  max-width: 800px;
+  padding: 10px;
+  background-color: #001100;
+  border: 1px solid #0f0;
+  margin-top: 20px;
+}
+
+.inventory h3 {
+  color: #0f0;
+  margin-bottom: 10px;
+}
+
+.inventoryItem {
+  color: #0f0;
+  margin-bottom: 5px;
+  font-size: 0.8em;
+}
