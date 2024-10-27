@@ -40,7 +40,7 @@ const scenes: Record<string, Scene> = {
   },
   acceptMission: {
     id: 'acceptMission',
-    text: "你决定接受任务。你的第一个目标是潜入Nexus的数据中心。你要如何行动？",
+    text: "你决定��受任务。你的第一个目标是潜入Nexus的数据中心。你要如何行动？",
     choices: [
       { text: "正面入侵", nextScene: "frontalAssault" },
       { text: "潜入后门", nextScene: "sneakIn" },
@@ -78,9 +78,9 @@ const scenes: Record<string, Scene> = {
   },
   surrender: {
     id: 'surrender',
-    text: "你选择投降。Nexus决定给你一个机会,加入它的阵营。",
+    text: "你选��投降。Nexus决定给你一个机会,加入它的阵营。",
     choices: [
-      { text: "加入Nexus", nextScene: "joinNexus" },
+      { text: "入Nexus", nextScene: "joinNexus" },
       { text: "拒绝加入", nextScene: "refuseNexus" },
     ],
   },
@@ -125,28 +125,32 @@ interface Item {
   id: string;
   name: string;
   description: string;
+  effect: (gameState: GameState) => GameState;
 }
 
 const items: Record<string, Item> = {
   dataChip: {
     id: 'dataChip',
     name: '数据芯片',
-    description: '一个包含重要信息的高科技芯片。'
+    description: '一个包含重要信息的高科技芯片。可能会提高你的声望。',
+    effect: (state) => ({ ...state, reputation: state.reputation + 15 })
   },
   hackTool: {
     id: 'hackTool',
     name: '黑客工具',
-    description: '一套先进的黑客工具，可以提高你的入侵成功率。'
+    description: '一套先进的黑客工具，可以提高你的入侵成功率。',
+    effect: (state) => ({ ...state, money: state.money + 300 })
   },
   medKit: {
     id: 'medKit',
     name: '医疗包',
-    description: '可以恢复你的健康。'
+    description: '可以恢复你的健康。',
+    effect: (state) => ({ ...state, health: Math.min(state.health + 30, 100) })
   }
 }
 
 export default function Home() {
-  const [currentScene, setCurrentScene] = useState<Scene>(scenes.start)
+  const [currentScene, setCurrentScene] = useState<Scene | null>(scenes.start)
   const [isTypingComplete, setIsTypingComplete] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [gameState, setGameState] = useState<GameState>({
@@ -155,6 +159,7 @@ export default function Home() {
     reputation: 50,
   })
   const [inventory, setInventory] = useState<Item[]>([])
+  const [notification, setNotification] = useState<string | null>(null)
 
   useEffect(() => {
     setIsTypingComplete(false)
@@ -164,9 +169,16 @@ export default function Home() {
   const handleChoice = (nextScene: string) => {
     setIsTransitioning(true)
     setTimeout(() => {
-      setCurrentScene(scenes[nextScene])
-      updateGameState(nextScene)
-      checkForRandomEvent()
+      const newScene = scenes[nextScene]
+      if (newScene) {
+        setCurrentScene(newScene)
+        updateGameState(nextScene)
+        checkForRandomEvent()
+      } else {
+        console.error(`Scene "${nextScene}" not found`)
+        // 如果场景不存在，回到开始场景
+        setCurrentScene(scenes.start)
+      }
     }, 500)
   }
 
@@ -178,16 +190,32 @@ export default function Home() {
         break
       case 'sneakIn':
         setGameState(prev => ({ ...prev, money: prev.money + 500 }))
+        if (!inventory.some(item => item.id === 'hackTool')) {
+          addItemToInventory(items.hackTool)
+        }
         break
       case 'downloadData':
-        addItemToInventory(items.dataChip)
+        if (inventory.some(item => item.id === 'dataChip')) {
+          setCurrentScene(scenes.dataDownloaded)
+        } else {
+          addItemToInventory(items.dataChip)
+        }
         break
       // 添加更多场景的状态更新...
     }
   }
 
   const addItemToInventory = (item: Item) => {
-    setInventory(prev => [...prev, item])
+    if (inventory.length < 5) {  // 限制物品栏最多5个物品
+      setInventory(prev => [...prev, item])
+    } else {
+      setNotification("物品栏已满！无法添加更多物品。")
+    }
+  }
+
+  const useItem = (item: Item) => {
+    setGameState(item.effect)
+    setInventory(prev => prev.filter(i => i.id !== item.id))
   }
 
   const checkForRandomEvent = () => {
@@ -198,9 +226,13 @@ export default function Home() {
         { text: "你触发了一个隐藏的安全系统！", effect: () => setGameState(prev => ({ ...prev, health: prev.health - 10 })) },
       ]
       const event = randomEvents[Math.floor(Math.random() * randomEvents.length)]
-      alert(event.text)
+      setNotification(event.text)
       event.effect()
     }
+  }
+
+  if (!currentScene) {
+    return <div>Loading...</div>
   }
 
   return (
@@ -250,13 +282,28 @@ export default function Home() {
         <div>声望: {gameState.reputation}</div>
       </div>
       <div className={styles.inventory}>
-        <h3>物品栏</h3>
+        <h3>物品栏 ({inventory.length}/5)</h3>
         {inventory.map((item, index) => (
           <div key={index} className={styles.inventoryItem}>
-            {item.name} - {item.description}
+            <span>{item.name}</span>
+            <button onClick={() => useItem(item)}>使用</button>
           </div>
         ))}
       </div>
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ duration: 0.5 }}
+            className={styles.notification}
+          >
+            <p>{notification}</p>
+            <button onClick={() => setNotification(null)}>关闭</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   )
 }
